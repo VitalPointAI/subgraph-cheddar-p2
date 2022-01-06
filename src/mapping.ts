@@ -97,9 +97,8 @@ function handleAction(
           } else {
             logs.memo = null
           }
-
-        logs.save()
       }
+      logs.save()
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
