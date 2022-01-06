@@ -1,31 +1,68 @@
-type Account @entity {
-  id: ID!
-  signerId: String!
-  withdrawCrop: [WithdrawCrop!]!
-  transfers: [Transfer!]!
-}
+# type Account @entity {
+#   id: ID!
+#   signerId: String!
+#   withdrawCrops: [WithdrawCrop!]!
+#   transfers: [Transfer!]!
+# }
 
 type WithdrawCrop @entity {
   id: ID!
-  output: String
-  action: String
-  amount: BigInt
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
-  token: String
+  predecessorId: String
   receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+}
+
+type FTMint @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  action: String
+  amount: BigInt
+  token: String
+  to: String
   memo: String
 }
+
 type Transfer @entity {
   id: ID!
-  output: String
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
   action: String
   amount: BigInt
   transferFrom: String
   transferTo: String
   memo: String
-  blockTime: BigInt
-  blockHeight: BigInt
-  blockHash: String
+  
 }

@@ -1,6 +1,6 @@
 specVersion: 0.0.4
-description: Ref Finance
-repository: https://github.com/VitalPointAI/near-subgraph-template.git
+description: Cheddar Token
+repository: https://github.com/VitalPointAI/subgraph-cheddar-p2.git
 schema:
   file: schema.graphql
 dataSources:
@@ -15,8 +15,8 @@ dataSources:
       language: wasm/assemblyscript
       file: receipts/receipts.wasm
       entities:
-        - Account
         - WithdrawCrop
+        - FTMint
         - Transfer
       receiptHandlers:
         - handler: handleReceipt

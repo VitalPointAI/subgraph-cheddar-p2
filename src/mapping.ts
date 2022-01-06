@@ -1,5 +1,5 @@
 import { near, log, BigInt, json, JSONValueKind } from "@graphprotocol/graph-ts";
-import { Account, WithdrawCrop, Transfer } from "../generated/schema";
+import { WithdrawCrop, FTMint, Transfer } from "../generated/schema";
 
 export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
   const actions = receipt.receipt.actions;
@@ -9,7 +9,8 @@ export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
       actions[i], 
       receipt.receipt, 
       receipt.block.header,
-      receipt.outcome
+      receipt.outcome,
+      receipt.receipt.signerPublicKey
       );
   }
 }
@@ -18,7 +19,8 @@ function handleAction(
   action: near.ActionValue,
   receipt: near.ActionReceipt,
   blockHeader: near.BlockHeader,
-  outcome: near.ExecutionOutcome
+  outcome: near.ExecutionOutcome,
+  publicKey: near.PublicKey
 ): void {
   
   if (action.kind != near.ActionKind.FUNCTION_CALL) {
@@ -26,39 +28,84 @@ function handleAction(
     return;
   }
   
-  let accounts = new Account(receipt.signerId);
+ // let accounts = new Account(receipt.signerId);
   const functionCall = action.toFunctionCall();
 
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "ft_mint") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+  if (functionCall.methodName == "withdraw_crop") {
+    const receiptId = receipt.id.toBase58();
+ //     accounts.signerId = receipt.signerId;
 
       // Maps the JSON formatted log to the LOG entity
-      let logs = new WithdrawCrop(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        logs.id = receipt.signerId;
-        logs.output = outcome.logs[0]
-        logs.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        logs.blockHeight = BigInt.fromU64(blockHeader.height)
-        logs.blockHash = blockHeader.hash.toHexString()
-        let rawString = outcome.logs[0]
-        let splitString = rawString.split(' ')
+      let crop = new WithdrawCrop(`${receiptId}`);
+
+      // Standard receipt properties
+      crop.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      crop.blockHeight = BigInt.fromU64(blockHeader.height)
+      crop.blockHash = blockHeader.hash.toBase58()
+      crop.predecessorId = receipt.predecessorId
+      crop.receiverId = receipt.receiverId
+      crop.signerId = receipt.signerId
+      crop.signerPublicKey = publicKey.bytes.toBase58()
+      crop.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      crop.tokensBurned = outcome.tokensBurnt
+      crop.outcomeId = outcome.id.toBase58()
+      crop.executorId = outcome.executorId
+      crop.outcomeBlockHash = outcome.blockHash.toBase58()
+
+      // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        crop.log = outcome.logs[0]
+      }
+
+      crop.save()
+  //    accounts.withdrawCrops.push(crop.id);
+      
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "ft_mint") {
+    const receiptId = receipt.id.toBase58();
+//      accounts.signerId = receipt.signerId;
+
+      // Maps the JSON formatted log to the LOG entity
+      let logs = new FTMint(`${receiptId}`);
+
+       // Standard receipt properties
+       logs.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+       logs.blockHeight = BigInt.fromU64(blockHeader.height)
+       logs.blockHash = blockHeader.hash.toBase58()
+       logs.predecessorId = receipt.predecessorId
+       logs.receiverId = receipt.receiverId
+       logs.signerId = receipt.signerId
+       logs.signerPublicKey = publicKey.bytes.toBase58()
+       logs.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+       logs.tokensBurned = outcome.tokensBurnt
+       logs.outcomeId = outcome.id.toBase58()
+       logs.executorId = outcome.executorId
+       logs.outcomeBlockHash = outcome.blockHash.toBase58()
+
+      // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        logs.log = outcome.logs[0]
+        let splitString = outcome.logs[0].split(' ')
         logs.action = splitString[0].toString()
         logs.amount = BigInt.fromString(splitString[1])
         logs.token = splitString[2].toString()
-        logs.receiverId = splitString[4].toString().slice(0, -1)
-        let splitMemo = rawString.split(':')
+        logs.to = splitString[4].toString().slice(0, -1)
+        let splitMemo = outcome.logs[0].split(':')
         if(splitMemo[1]){
-          logs.memo = splitMemo[1]
+          logs.memo = splitMemo[1].slice(1,)
           } else {
-            logs.memo = ''
+            logs.memo = null
           }
 
         logs.save()
       }
 
-      accounts.withdrawCrop.push(logs.id);
+ //     accounts.withdrawCrop.push(logs.id);
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
@@ -66,36 +113,47 @@ function handleAction(
 
    // change the methodName here to the methodName emitting the log in the contract
    if (functionCall.methodName == "ft_transfer_call") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+    const receiptId = receipt.id.toBase58();
+  //    accounts.signerId = receipt.signerId;
 
       // Maps the JSON formatted log to the LOG entity
       let transfers = new Transfer(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        transfers.id = receipt.signerId;
-        transfers.output = outcome.logs[0]
-        transfers.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-        transfers.blockHeight = BigInt.fromU64(blockHeader.height)
-        transfers.blockHash = blockHeader.hash.toHexString()
-        let rawString = outcome.logs[0]
-        let splitString = rawString.split(' ')
+
+      // Standard receipt properties
+      transfers.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      transfers.blockHeight = BigInt.fromU64(blockHeader.height)
+      transfers.blockHash = blockHeader.hash.toBase58()
+      transfers.predecessorId = receipt.predecessorId
+      transfers.receiverId = receipt.receiverId
+      transfers.signerId = receipt.signerId
+      transfers.signerPublicKey = publicKey.bytes.toBase58()
+      transfers.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      transfers.tokensBurned = outcome.tokensBurnt
+      transfers.outcomeId = outcome.id.toBase58()
+      transfers.executorId = outcome.executorId
+      transfers.outcomeBlockHash = outcome.blockHash.toBase58()
+
+      // Log parsing
+      if(outcome.logs != null && outcome.logs.length > 0){
+        transfers.log = outcome.logs[0]
+        let splitString = outcome.logs[0].split(' ')
         transfers.action = splitString[0].toString()
         transfers.amount = BigInt.fromString(splitString[1])
         transfers.transferFrom = splitString[3].toString()
         transfers.transferTo = splitString[5]
-        let splitMemo = rawString.split(':')
+        let splitMemo = outcome.logs[0].split(':')
         if(splitMemo[1]){
-        transfers.memo = splitMemo[1]
+        transfers.memo = splitMemo[1].slice(1,)
         } else {
-          transfers.memo = ''
+          transfers.memo = null
         }
-
-        transfers.save()
       }
-      accounts.transfers.push(transfers.id);
+
+      transfers.save()
+ //     accounts.transfers.push(transfers.id);
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
 
-  accounts.save();
+ // accounts.save();
 }
