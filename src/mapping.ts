@@ -28,15 +28,13 @@ function handleAction(
     return;
   }
   
- // let accounts = new Account(receipt.signerId);
   const functionCall = action.toFunctionCall();
 
   // change the methodName here to the methodName emitting the log in the contract
   if (functionCall.methodName == "withdraw_crop") {
     const receiptId = receipt.id.toBase58();
- //     accounts.signerId = receipt.signerId;
 
-      // Maps the JSON formatted log to the LOG entity
+      // Maps the formatted log to the LOG entity
       let crop = new WithdrawCrop(`${receiptId}`);
 
       // Standard receipt properties
@@ -59,7 +57,6 @@ function handleAction(
       }
 
       crop.save()
-  //    accounts.withdrawCrops.push(crop.id);
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
@@ -68,7 +65,6 @@ function handleAction(
   // change the methodName here to the methodName emitting the log in the contract
   if (functionCall.methodName == "ft_mint") {
     const receiptId = receipt.id.toBase58();
-//      accounts.signerId = receipt.signerId;
 
       // Maps the JSON formatted log to the LOG entity
       let logs = new FTMint(`${receiptId}`);
@@ -104,8 +100,6 @@ function handleAction(
 
         logs.save()
       }
-
- //     accounts.withdrawCrop.push(logs.id);
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
@@ -114,7 +108,6 @@ function handleAction(
    // change the methodName here to the methodName emitting the log in the contract
    if (functionCall.methodName == "ft_transfer_call") {
     const receiptId = receipt.id.toBase58();
-  //    accounts.signerId = receipt.signerId;
 
       // Maps the JSON formatted log to the LOG entity
       let transfers = new Transfer(`${receiptId}`);
@@ -150,10 +143,9 @@ function handleAction(
       }
 
       transfers.save()
- //     accounts.transfers.push(transfers.id);
+
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
 
- // accounts.save();
 }
